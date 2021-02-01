@@ -112,15 +112,15 @@ func (accountMessagesView *AccountTransactions) List(
 	).From(
 		"view_account_transactions",
 	).InnerJoin(
-		"view_account_transaction_data ON view_account_transactions.transaction_hash = view_account_transaction_data.hash",
+		"view_account_transaction_data ON view_account_transactions.block_height = view_account_transaction_data.block_height AND view_account_transactions.transaction_hash = view_account_transaction_data.hash",
 	).Where(
 		"view_account_transactions.account = ?", filter.Account,
 	)
 
 	if order.Id == view.ORDER_DESC {
-		stmtBuilder = stmtBuilder.OrderBy("id DESC")
+		stmtBuilder = stmtBuilder.OrderBy("view_account_transactions.id DESC")
 	} else {
-		stmtBuilder = stmtBuilder.OrderBy("id")
+		stmtBuilder = stmtBuilder.OrderBy("view_account_transactions.id")
 	}
 
 	rDbPagination := rdb.NewRDbPaginationBuilder(
@@ -148,6 +148,7 @@ func (accountMessagesView *AccountTransactions) List(
 	if err != nil {
 		return nil, nil, fmt.Errorf("error executing account transactions select SQL: %v: %w", err, rdb.ErrQuery)
 	}
+	defer rowsResult.Close()
 
 	accountMessages := make([]AccountTransactionReadRow, 0)
 	for rowsResult.Next() {
